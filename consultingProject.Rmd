@@ -1,0 +1,288 @@
+---
+title: "Consulting Project"
+author: "Jong Hyun Choi"
+date: "10/17/2021"
+output: html_document
+---
+
+```{r}
+data4 = read_xlsx("C:\\Users\\SAMSUNG\\OneDrive\\STAT4983W\\ConsultingProjectData_v3.xlsx", sheet = "All_data_Categories")
+data2 = read_xlsx("C:\\Users\\SAMSUNG\\OneDrive\\STAT4983W\\ConsultingProjectData_v3.xlsx", sheet = "Plots_data")
+data3 = read_xlsx("C:\\Users\\SAMSUNG\\OneDrive\\STAT4983W\\ConsultingProjectData_v3.xlsx", sheet = "Seedlings_cut_sprouting_togethe")
+```
+
+
+```{r}
+yesharvest  = subset(data1, Harvested %in% 1)
+yesharvest = yesharvest$Harvested
+```
+
+```{r}
+par(mfrow=c(2,3))
+boxplot(data4$`BasalArea of plot m2 ha-1` ~ data4$VegetationType)
+boxplot(data4$`BasalArea of plot m2 ha-1` ~ data4$Harvested)
+boxplot(data4$`BasalArea of plot m2 ha-1` ~ data4$`Milpa(has it been milpa)`)
+boxplot(data4$`BasalArea of plot m2 ha-1` ~ data4$`Forest'sAge (years)`)
+boxplot(data4$`BasalArea of plot m2 ha-1` ~ data4$SoilType)
+```
+
+
+ggplot(data2, aes(x=`Basal Area (m2/ha-1)`, y=Harvested)) +  geom_boxplot(fill='blue')
+ggplot(data2, aes(x=`Basal Area (m2/ha-1)`, y=VegetationType)) +  geom_boxplot(fill='green')
+ggplot(data2, aes(x=`Basal Area (m2/ha-1)`, y=SoilType)) +  geom_boxplot(fill='red')
+ggplot(data2, aes(x=`Basal Area (m2/ha-1)`, y=`Milpa(has it been milpa)`)) + geom_boxplot(fill='yellow')
+ggplot(data2, aes(x=`Basal Area (m2/ha-1)`, y=`Forest'sAge (years)`)) +  geom_boxplot(fill='black')
+
+
+### interation???
+```{r}
+## We want to see if there is significant difference between the Basal Area of plot m^2 ha^-1 and whether it's been milpa or not. 
+# Significance level less than 0.05 
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ milpa, data = data4))
+```
+
+```{r}
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ data4$VegetationType))
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ data4$Harvested))
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ data4$SoilType))
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ data4$`Forest'sAge (years)`))
+summary(aov(data4$`BasalArea of plot m2 ha-1` ~ data4$`Milpa(has it been milpa)`))
+
+```
+
+
+
+## 2
+```{r}
+par(mfrow=c(2,3))
+boxplot(data2$`Stem density (#/ha)` ~ data2$Harvested)
+boxplot(data2$`Stem density (#/ha)` ~ data2$VegetationType)
+boxplot(data2$`Stem density (#/ha)` ~ data2$`Milpa(has it been milpa)`)
+boxplot(data2$`Stem density (#/ha)` ~ data2$`Forest'sAge (years)`)
+boxplot(data2$`Stem density (#/ha)` ~ data2$SoilType)
+```
+
+##statistically different? 
+## what does the pvalue mean? 
+
+
+```{r}
+summary(aov(data2$`Stem density (#/ha)` ~ data2$Harvested))
+summary(aov(data2$`Stem density (#/ha)` ~ data2$`Milpa(has it been milpa)`))
+summary(aov(data2$`Stem density (#/ha)` ~ data2$VegetationType))
+summary(aov(data2$`Stem density (#/ha)` ~ data2$SoilType))
+summary(aov(data2$`Stem density (#/ha)` ~ data2$`Forest'sAge (years)`))
+```
+
+```{r}
+TukeyHSD(aov(data2$`Stem density (#/ha)` ~ data2$VegetationType))
+
+
+```
+
+
+```{r}
+## number of stems in each size class 
+seedling = filter(data1, `DBH (cm)` < 0.5) 
+seedlingcount = length(seedling$`DBH (cm)`)
+
+sapling = filter(data1, `DBH (cm)` >= 0.5 & `DBH (cm)` < 5)
+saplingcount = length(sapling$`DBH (cm)`)
+
+tree = filter(data1, `DBH (cm)` > 4)
+treecount = length(tree$`DBH (cm)`)
+```
+
+
+
+```{r}
+data4 %>% filter(Type %in% c("Sapling", "Tree")) %>%  
+ggplot(aes(x = Harvested, y = `DBH (cm)`, group = Type, color = Type)) + geom_boxplot()
+
+
+data4 %>% filter(Type %in% c("Sapling", "Tree (11~15)", "Tree (16~20)", "Tree (21~25)", "Tree (26~30)", "Tree (5~10)")) %>%  
+ggplot(aes(x = Harvested, y = `Stem #`, group = Type, color = Type)) + geom_boxplot()
+```
+
+
+
+
+
+
+
+4.	Are these population size structures (stem densities per size class) statistically different between harvested and unharvested plots? Are there other variables influencing this difference? 
+
+```{r}
+summary(aov(lm(data2$`Saplings (#/ha)` ~ data2$Harvested * data2$SoilType)))
+
+summary(aov(data2$`Saplings (#/ha)` ~ data2$Harvested * data2$VegetationType))
+
+summary(aov(data2$`Saplings (#/ha)` ~ data2$Harvested *data2$`Milpa(has it been milpa)` ))
+
+summary(aov(data2$`Saplings (#/ha)` ~ data2$Harvested *data2$`Forest'sAge (years)` ))
+
+
+
+summary(aov(data2$`Saplings (#/ha)` ~ data2$Harvested))
+summary(aov(data2$`Saplings (#/ha)` ~ data2$SoilType))
+summary(aov(data2$`Saplings (#/ha)` ~ data2$VegetationType))
+summary(aov(data2$`Saplings (#/ha)` ~ data2$`Milpa(has it been milpa)`))
+summary(aov(data2$`Saplings (#/ha)` ~ data2$`Forest'sAge (years)`))
+
+
+
+
+
+
+summary(aov(data2$`Tree (#/ha)` ~ data2$SoilType))
+summary(aov(data2$`Tree (#/ha)` ~ data2$VegetationType))
+summary(aov(data2$`Tree (#/ha)` ~ data2$`Milpa(has it been milpa)`))
+summary(aov(data2$`Tree (#/ha)` ~ data2$`Forest'sAge (years)`))
+summary(aov(data2$`Tree (#/ha)` ~ data2$Harvested))
+
+
+
+
+
+
+summary(aov(data2$`Sapling Basal Area (m2/ha-1)` ~ data2$Harvested))
+
+summary(aov(data2$`Sapling Basal Area (m2/ha-1)` ~ data2$VegetationType))
+
+
+
+
+summary(aov(data2$`Sapling Basal Area (m2/ha-1)` ~ data2$`Milpa(has it been milpa)`))
+
+
+
+
+summary(aov(data2$`Sapling Basal Area (m2/ha-1)` ~ data2$`Forest'sAge (years)`))
+
+
+
+summary(aov(data2$`Sapling Basal Area (m2/ha-1)` ~ data2$SoilType))
+
+
+
+summary(aov(data2$`Tree Basal Area` ~ data2$Harvested))
+summary(aov(data2$`Tree Basal Area` ~ data2$VegetationType))
+summary(aov(data2$`Tree Basal Area` ~ data2$`Milpa(has it been milpa)`))
+summary(aov(data2$`Tree Basal Area` ~ data2$`Forest'sAge (years)`))
+summary(aov(data2$`Tree Basal Area` ~ data2$SoilType))
+
+
+```
+
+> col2=ifelse(df1$col=="true",1,0)
+
+plot(partyHr ~ drinks, data=survey, col=as.integer(gender), xlab="Drinks/week", 
+     ylab="Party hours/week", pch=19, las=1)
+abline(fit_male$coefficients, col=1, lwd=2)
+abline(fit_female$coefficients, col=2, lwd=2)
+
+
+
+
+
+as.numeric(as.factor(weather4$RainTomorrow))
+
+
+require(dplyr)
+weather4 <- weather4 %>%
+      mutate(RainToday = ifelse(RainToday == "No",0,1))
+      
+      
+```{r}
+data5 = data2 %>% mutate(Harvested = ifelse(Harvested == "Yes", 1, 0))
+boxplot(data5$`Saplings (#/ha)` ~ data5$Harvested)
+
+
+
+boxplot(data4$`BasalArea per tree m2 ha-1` ~ data4$Type)
+
+```
+
+
+
+```{r}
+par(mfrow=c(2,3))
+
+g = ggplot(data4, aes(x = Type, y = `Stem #`))
+g + geom_bar(aes(fill = Harvested), stat = 'identity') 
+
+j = ggplot(data4, aes(x = Type, y = `Stem #`))
+j + geom_bar(aes(fill = SoilType), stat = 'identity')
+
+z = ggplot(data4, aes(Type, y = `Stem #`))
+z + geom_bar(aes(fill = VegetationType), stat = 'identity')
+
+x = ggplot(data4, aes(Type, y = `Stem #`))
+x + geom_bar(aes(fill = `Milpa(has it been milpa)`), stat = 'identity')
+
+t = ggplot(data4, aes(Type, y= `Stem #`))
+t + geom_bar(aes(fill = `Forest'sAge (years)`), stat = 'identity')
+
+```
+
+
+```{r}
+par = 
+h = ggplot(data4, aes(x = Type, y = `BasalArea per tree m2 ha-1`))
+h + geom_bar(aes(fill = Harvested), stat = 'identity') 
+
+l = ggplot(data4, aes(x = Type, y = `BasalArea per tree m2 ha-1`))
+l + geom_bar(aes(fill = SoilType), stat = 'identity')
+
+c = ggplot(data4, aes(Type, y = `BasalArea per tree m2 ha-1`))
+c + geom_bar(aes(fill = VegetationType), stat = 'identity')
+
+d = ggplot(data4, aes(Type, y = `BasalArea per tree m2 ha-1`))
+d + geom_bar(aes(fill = `Milpa(has it been milpa)`), stat = 'identity')
+
+s = ggplot(data4, aes(Type, y= `BasalArea per tree m2 ha-1`))
+s + geom_bar(aes(fill = `Forest'sAge (years)`), stat = 'identity')
+```
+
+
+library(ggplot2)
+data(Marriage, package = "mosaicData")
+
+# plot the distribution of race
+ggplot(Marriage, aes(x = race)) + 
+  geom_bar()
+  
+  
+  
+  
+  data(Salaries, package="carData")
+
+# calculate mean salary for each rank
+library(dplyr)
+plotdata <- Salaries %>%
+  group_by(rank) %>%
+  summarize(mean_salary = mean(salary))
+
+# plot mean salaries
+ggplot(plotdata, 
+       aes(x = rank, 
+           y = mean_salary)) +
+  geom_bar(stat = "identity")
+
+
+
+```{r}
+plotdat = data4 %>% group_by(Type, SoilType) %>% summarize(Stem_density = `Stem #`) 
+ggplot(plotdat, aes(x = Type, y = Stem_density, group = SoilType)) + geom_bar(stat = "identity")
+
+plotdat2 = data4 %>% group_by(Type) %>% summarize(DBH = `DBH (cm)`)
+ggplot(plotdat2, aes(x = Type, y = DBH)) + geom_bar(stat = 'identity')
+```
+
+
+
+
+
+
+
+
