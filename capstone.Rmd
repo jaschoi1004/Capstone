@@ -1,0 +1,392 @@
+---
+title: "STAT 4893W"
+author: "Jong Hyun Choi"
+date: "9/19/2021"
+output: html_document
+---
+
+```{r}
+library(readxl)
+first1 = read_xlsx("2018_10.xlsx", col_names = TRUE)
+
+first2 = read_xlsx("2018_12.xlsx", col_names = TRUE)
+```
+
+
+```{r}
+library(dplyr)
+data1 = inner_join(first1, first2, by = "CPSIDP")
+```
+
+```{r}
+second1 = read_xlsx("2019_10.xlsx", col_names = T)
+
+second2 = read_xlsx("2019_12.xlsx", col_names = T)
+
+```
+
+```{r}
+data2 = inner_join(second1, second2, by = "CPSIDP")
+```
+
+
+
+```{r}
+#------------------ cleaned the dataset
+```
+
+
+```{r}
+## got rid of all the columns that had all missing values
+data1.mmissing = data1[, colSums(is.na(data1)) ==0 ]
+data2.mmissing = data2[, colSums(is.na(data2)) ==0 ]
+```
+
+
+```{r}
+data1 = select(data1.mmissing, -YEAR.y, -SERIAL.y, -HWTFINL.y, -FAMINC.y, -PERNUM.y, -WTFINL.y, -AGE.y, -SEX.y, -RACE.y)
+data2 =  select(data2.mmissing, -YEAR.y, -SERIAL.y, -HWTFINL.y, -FAMINC.y, -PERNUM.y, -WTFINL.y, -AGE.y, -SEX.y, -RACE.y)
+```
+
+```{r}
+mod = lm(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data1)
+mod12 = lm(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data2)
+
+summary(mod)
+
+
+
+mod11 = lm(FSSTATUSD.y^-0.5050505 ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data1)
+summary(lm(FSSTATUSD.y^-0.5050505 ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data2))
+
+
+mod22 = lm(FSSTATUSD.y^-0.5050505 ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data2)
+
+mod2 = boxCox(mod)
+mod2$x[which.max(mod2$y)]
+
+
+summary(lm(FSSTATUSD.y^-0.5050505 ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3))
+
+jas = glm(FSSTATUSD.y^-0.5050505 ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3)
+summary(jas)
+```
+
+
+
+```{r}
+## change CPSIDP from character to numeric 
+data1$CPSIDP = as.numeric(as.character(data1$CPSIDP))
+data2$CPSIDP = as.numeric(as.character(data2$CPSIDP))
+
+## can check to see if all the variables are numeric 
+sapply(data1, class)
+sapply(data2, class)
+
+```
+
+
+```{r}
+## deleting rows where the following variables are not equal to 99 
+data1 = data1 %>% filter(FAMINC.x != 995 & FAMINC.x != 996 & FAMINC.x != 997 & FAMINC.x != 999 & FSSTATUS.y != 99 & FSRAWSCR.y!=99 & FSRAWSCR.y !=98 & FSSTATUSD.y !=99 & FSSTATUSD.y != 98 & EDFULL.x != 99 & EDTYPE.x != 99 & EDVOCA.x!= 99)
+
+data2 = data2 %>% filter(FAMINC.x != 995 & FAMINC.x != 996 & FAMINC.x != 997 & FAMINC.x != 999 & FSSTATUS.y != 99 & FSRAWSCR.y!=99 & FSRAWSCR.y !=98 & FSSTATUSD.y !=99 & FSSTATUSD.y != 98 & EDFULL.x != 99 & EDTYPE.x != 99 & EDVOCA.x!= 99)
+```
+
+
+```{r} 
+## the levels that show have 98 in them 
+data1$FSSTATUSD.y = factor(data1$FSSTATUSD.y)
+data1$FAMINC.x = factor(data1$FAMINC.x)
+data1$AGE.x = factor(data1$AGE.x)
+data1$SEX.x = factor(data1$SEX.x)
+data1$RACE.x = factor(data1$RACE.x)
+data1$EDFULL.x = factor(data1$EDFULL.x)
+data1$EDTYPE.x = factor(data1$EDTYPE.x)
+data1$EDVOCA.x = factor(data1$EDVOCA.x)
+data1$FSRAWSCR.y = factor(data1$FSRAWSCR.y)
+data1$FSSTATUS.y = factor(data1$FSSTATUS.y)
+data1$YEAR.x = factor(data1$YEAR.x)
+
+data2$FSSTATUSD.y = factor(data2$FSSTATUSD.y)
+data2$FAMINC.x = factor(data2$FAMINC.x)
+data2$AGE.x = factor(data2$AGE.x)
+data2$SEX.x = factor(data2$SEX.x)
+data2$RACE.x = factor(data2$RACE.x)
+data2$EDFULL.x = factor(data2$EDFULL.x)
+data2$EDTYPE.x = factor(data2$EDTYPE.x)
+data2$EDVOCA.x = factor(data2$EDVOCA.x)
+data2$FSRAWSCR.y = factor(data2$FSRAWSCR.y)
+data2$FSSTATUS.y = factor(data2$FSSTATUS.y)
+data2$YEAR.x = factor(data2$YEAR.x)
+```
+
+
+
+```{r}
+## random forest 
+## predictor on columns 
+## rows actual
+## class imbalance  - weight variable? 
+
+data3 = rbind(data1, data2)
+library(randomForest)
+
+#=--------------------------------------------------------------------------------------
+
+## seeing the imbalance between the different levels of food insecurity in a barplot 
+b = barplot(prop.table(table(data3$FSSTATUSD.y)), col = "light blue")
+b
+
+## seeing the proportion numbers from the barplot 
+prop.table(table(data3$FSSTATUSD.y))
+
+```
+
+
+
+```{r}
+
+ind = sample(2, nrow(data3), replace = TRUE, prob = c(0.7, 0.3))
+ind
+
+train = data3[ind ==1,]
+test = data3[ind ==2, ]
+
+table(train$FSSTATUSD.y)
+table(test$FSSTATUSD.y)
+
+rftrain = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = train)
+rftrain
+
+## random forest
+confusionMatrix(predict(rftrain, test), test$FSSTATUSD.y)
+
+
+## linear model 
+as.numeric(train$FSSTATUSD.y)
+mod9 = lm(as.numeric(FSSTATUSD.y)~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = train)
+
+jasmin = round((predict(mod9, test)))
+sum(jasmin > 4.5)
+sum(jasmin < 0.5)
+table(jasmin)
+
+confusionMatrix(factor(round(predict(mod9, test))), test$FSSTATUSD.y, positive = '1')
+
+
+
+## over sampling 
+over = sample(FSSTATUSD.y~., data = train, method = "over", N = 300)
+```
+
+
+
+
+
+
+```{r}
+set.seed(123)
+rf = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3, ntree = 1000, importance = TRUE)
+rf
+
+mod7 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3, ntree = 1000, importance = "impurity")
+varimp7 = mod7$variable.importance
+
+
+barplot(varimp7, las = 1, col = "light blue",names.arg = c("Family Income", "Education Type", "Full/Part Time", "Vocational Training", "Race"), cex.names = 0.7)
+
+
+
+
+
+barplot(varimp4, las = 1, col = "blue", names.arg = c("Family Income", "Education Type", "Full/Part Time", "Vocational Training", "Race"),cex.names = 0.71)
+
+
+#rf$confusion
+```
+
+
+```{r}
+## showing how much the model accuracy would decrease if we drop that variable 
+importance(rf)
+```
+
+```{r}
+##  Measure of variable importance based on the Gini impurity index used for the calculation of splits in trees.
+## From the results, we can see that famine and race had the most impact whereas the education variables not so much. 
+varImpPlot(rf)
+```
+
+
+## sample 63 observations from each of the levels randomly (subset / sample function?) 
+## and then combine the four levels with the randomly sampled data, and also randomize that whole dataset 
+## put that in the random forest? 
+
+
+
+```{r}
+## randomly sampling 63 observations from each of the levels 
+
+## put 63 observations of each level into aa 
+aa = data3 %>% group_by(FSSTATUSD.y) %>% sample_n(63)
+
+## randomly mix the orders 
+aa = aa[sample(1:nrow(aa)), ]
+```
+
+```{r}
+
+ind = sample(2, nrow(data3), replace = TRUE, prob = c(0.7, 0.3))
+ind
+
+train = data3[ind ==1,]
+test = data3[ind ==2, ]
+
+
+ind2 = sample(2, nrow(aa), replace = TRUE, prob = c(0.7,0.3))
+ind2
+
+train2 = aa[ind2 ==1,]
+test2 = aa[ind2 ==2,]
+
+
+## running random forest with more balanced dataset
+rf2 = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3 , ntree = 2000, importance = TRUE)
+rf2
+
+rf3 = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = aa , ntree = 1000, importance = TRUE)
+rf3 
+
+confusionMatrix(predict(rf3, test), test$FSSTATUSD.y)
+
+
+library(ranger)
+rf4 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = aa, importance = "impurity")
+
+varimp4 = rf4$variable.importance
+
+## barplot of variable of importance 
+barplot(varimp4, las = 1, col = "light blue", names.arg = c("Family Income", "Education Type", "Full/Part Time", "Vocational Training", "Race"),cex.names = 0.71)
+
+```
+
+```{r}
+## visualization for linear regression including 4 variables 
+
+g = ggplot(data3, aes(FSSTATUSD.y))
+g + geom_bar(aes(fill = EDFULL.x, width = 0.5 + theme(axis.text.x = element_text(angle = 65, vjust = 0.6))), position = "dodge")
+
+g2 = ggplot(data3, aes(FSSTATUSD.y))
+g2 + geom_bar(aes(fill = EDTYPE.x , width = 0.5 + theme(axis.text.x = element_text(angle = 65, vjust = 0.6))), position = "dodge")
+
+g3 = ggplot(data3, aes(FSSTATUSD.y))
+g3 + geom_bar(aes(fill = EDVOCA.x, width = 0.5 + theme(axis.text.x = element_text(angle = 65, vjust = 0.6))), position = "dodge")
+
+g4 = ggplot(data3, aes(FSSTATUSD.y))
+g4 + geom_bar(aes(fill = RACE.x, width = 0.5 + theme(axis.text.x = element_text(angle = 65, vjust = 0.6))))
+
+g5 = ggplot(data3, aes(FSSTATUSD.y))
+g5 + geom_bar(aes(fill = FAMINC.x, width = 0.5 + theme(axis.text.x = element_text(angle = 65, vjust = 0.6))))
+
+```
+
+## look at the chapter 5 of the textbook and resampling method, cross validation...
+```{r}
+importance(rf2)
+varImpPlot(rf2)
+```
+
+
+
+```{r}
+## showing the imbalanced dataset 
+prop.table(table(data1$FSSTATUSD.y))
+
+```
+
+
+```{r}
+##
+set.seed(100)
+train = sample(nrow(data3), 0.7*nrow(data3), replace = FALSE)
+Trainset = data1[train,]
+Validset = data[-train,]
+
+summary(Trainset)
+summary(Validset)
+
+```
+
+ data_balanced_both <- ovun.sample(cls ~ ., data = hacide.train, method = "both", p=0.5,                             N=1000, seed = 1)$data
+> table(data_balanced_both$cls)
+
+
+
+
+
+
+
+```{r}
+# SMOTE Method 
+library(caTools)
+
+smotedata = as.data.frame(data3)
+split = sample.split(smotedata$FSSTATUSD.y, SplitRatio = 0.7)
+
+dresstrain = subset(smotedata, split ==TRUE) 
+dresstest = subset(smotedata, split == FALSE)
+
+as.data.frame(table(dresstrain$FSSTATUSD.y))
+
+
+library(DMwR) 
+dresstrain$FSSTATUSD.y = as.factor(dresstrain$FSSTATUSD.y)
+
+first_imbalance = SMOTE(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = dresstrain, k = 10, perc.over = 1000, perc.under = 200)
+
+final_imbalance = SMOTE(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = first_imbalance, perc.over = 1000, perc.under = 200, k = 10)
+
+barplot(varimp3, las = 1, col = "light blue", names.arg = c("Family Income", "Education Type", "Full/Part Time", "Vocational Training", "Race"),cex.names = 0.71)
+
+
+
+
+
+finalmod = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance, ntree = 1000)
+varImpPlot(finalmod)
+mod4 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance, importance = "impurity")
+varimp3 = mod4$variable.importance
+
+predicted.response = predict(finalmod, dresstest)
+confusionMatrix(data = predicted.response, reference = as.factor(dresstest$FSSTATUSD.y))
+
+
+
+summary(lm(as.numeric(FSSTATUSD.y) ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance))
+choi = lm(as.numeric(FSSTATUSD.y) ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance)
+jass = predict(choi, dresstest)
+sum(jass > 4.5) 
+jass[jass < 0.5 ] = 1
+
+jass2 = round(jass)
+
+table(jass2)
+
+
+confusionMatrix(data = as.factor(jass2), reference = dresstest$FSSTATUSD.y)
+
+```
+
+
+
+
+
+
+```{r}
+## don't do this 
+## to see which factors might influence? 
+summary(lm(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data1))
+```
+
+
