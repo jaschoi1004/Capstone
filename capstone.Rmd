@@ -6,26 +6,28 @@ output: html_document
 ---
 
 ```{r}
+## combine two 2018 Excel sheets together 
 library(readxl)
 first1 = read_xlsx("2018_10.xlsx", col_names = TRUE)
-
 first2 = read_xlsx("2018_12.xlsx", col_names = TRUE)
 ```
 
 
 ```{r}
+## inner join by CPSIDP column 
 library(dplyr)
 data1 = inner_join(first1, first2, by = "CPSIDP")
 ```
 
 ```{r}
+## do the same for 2019 Excel sheets
 second1 = read_xlsx("2019_10.xlsx", col_names = T)
-
 second2 = read_xlsx("2019_12.xlsx", col_names = T)
 
 ```
 
 ```{r}
+## inner join by CPSIDP column
 data2 = inner_join(second1, second2, by = "CPSIDP")
 ```
 
@@ -38,6 +40,7 @@ data2.mmissing = data2[, colSums(is.na(data2)) ==0 ]
 
 
 ```{r}
+## take out columns that I don't need
 data1 = select(data1.mmissing, -YEAR.y, -SERIAL.y, -HWTFINL.y, -FAMINC.y, -PERNUM.y, -WTFINL.y, -AGE.y, -SEX.y, -RACE.y)
 data2 =  select(data2.mmissing, -YEAR.y, -SERIAL.y, -HWTFINL.y, -FAMINC.y, -PERNUM.y, -WTFINL.y, -AGE.y, -SEX.y, -RACE.y)
 ```
@@ -94,12 +97,9 @@ data2$YEAR.x = factor(data2$YEAR.x)
 
 
 ```{r}
-## random forest 
-## predictor on columns 
-## rows actual
-## class imbalance  - weight variable? 
-
+## combine the two datasets
 data3 = rbind(data1, data2)
+
 library(randomForest)
 
 #=--------------------------------------------------------------------------------------
@@ -112,7 +112,6 @@ b
 prop.table(table(data3$FSSTATUSD.y))
 
 ```
-
 
 
 ```{r}
@@ -137,11 +136,9 @@ confusionMatrix(predict(rftrain, test), test$FSSTATUSD.y)
 
 
 ```{r}
-set.seed(123)
-rf = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3, ntree = 1000, importance = TRUE)
-rf
+## Using Ranger to do barplot and find variable of importance
+mod7 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = train, ntree = 1000, importance = "impurity")
 
-mod7 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = data3, ntree = 1000, importance = "impurity")
 varimp7 = mod7$variable.importance
 
 
@@ -152,14 +149,14 @@ barplot(varimp7, las = 1, col = "light blue",names.arg = c("Family Income", "Edu
 
 ```{r}
 ## showing how much the model accuracy would decrease if we drop that variable 
-importance(rf)
+importance(mod7)
 ```
 
 
 ```{r}
 ##  Measure of variable importance based on the Gini impurity index used for the calculation of splits in trees.
 ## From the results, we can see that famine and race had the most impact whereas the education variables not so much. 
-varImpPlot(rf)
+varImpPlot(rftrain)
 ```
 
 
@@ -240,15 +237,29 @@ dresstrain$FSSTATUSD.y = as.factor(dresstrain$FSSTATUSD.y)
 final_imbalance = SMOTE(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = dresstrain, perc.over = 1000, perc.under = 200, k = 10)
 
 ## USing SMOTE Method into Random Forest
-finalmod = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = first_imbalance, ntree = 1000)
+finalmod = randomForest(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance, ntree = 1000)
+
 varImpPlot(finalmod)
+
 mod4 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance, importance = "impurity")
 varimp3 = mod4$variable.importance
 
 predicted.response = predict(finalmod, dresstest)
+
 confusionMatrix(data = predicted.response, reference = as.factor(dresstest$FSSTATUSD.y))
 
+
+rf5 = ranger(FSSTATUSD.y ~ FAMINC.x + EDTYPE.x + EDFULL.x + EDVOCA.x + RACE.x, data = final_imbalance, importance = "impurity")
+varimp5 = rf5$variable.importance
+
 ```
+
+
+
+
+
+
+
 
 
 
